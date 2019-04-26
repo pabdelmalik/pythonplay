@@ -19,7 +19,7 @@ PDFstring = "/track/pdf"
 #Create empty global array to hold PDF references from all multiple pages
 PDFList = []
 
-#Retrieve the results page of a search on the keyword from BMC Public Health
+#Define the page of interest (here it is from BMC Public Health, searching on the keyword)
 BMCPH = "https://bmcpublichealth.biomedcentral.com/articles?query=" +keyword
 
 #Open the page in a browser to check it
@@ -41,35 +41,45 @@ numPages = int(res.text[startPages:endPages])
 #Page string in URL is &page=
 #print(numPages)
 
-#Create an array of PDF links
-
-
 def getPDFList():
+    failsafe = 9999
     for i in range (1,numPages+1):
         sanityCheck = 0
         linkStart = 0
         nextPosition = 0
         PDFSource = BMCPH+"&page=%s"%(i)   #the %s is like a pointer which is replaced by i; done here because cannot concatenate integer to string  
-        print (PDFSource)
+        print ("Getting Page ",i," of ",numPages)
         res = requests.get(PDFSource)
         while linkStart != -1:
             sanityCheck = sanityCheck + 1
             linkStart = res.text.find(PDFstring, nextPosition)
-            if sanityCheck > 9999 or linkStart == -1:  
+            if sanityCheck > failsafe or linkStart == -1:  
                 break   
             linkEnd = res.text.find('"',linkStart)
-            PDFList.append (res.text[linkStart:linkEnd])
+            PDFList.append (res.text[linkStart:linkEnd]) 
             nextPosition = linkEnd
-            
-            
+                        
         #PDFList.extend (getPDFList(res.text))
         #print (PDFSource)
 
     #return PDFList
 
 getPDFList()
-print (len(PDFList))
 
+#,"status","DLC","PDFDate"] #DLC is the Date Last Checked
+
+#Save the PDF list to a CSV file
+filename = "PDF_List_" + keyword + ".csv"
+thisFile = open(filename,"w+")
+
+with thisFile as f:
+    for item in PDFList:
+        f.write(item+"\n")
+        #f.write(",".join(map(str, item))+"\n")
+        
+print ("Total PDFs in list: ",len(PDFList),". File has been written to ",filename)
+
+#print (PDFList)
 
 #def getPDFs(PDFList):
 #    testfile = urllib.URLopener()
@@ -79,9 +89,36 @@ print (len(PDFList))
 
 #folder_location = r'E:\webscraping'
 #if not os.path.exists(folder_location):os.mkdir(folder_location)    
-    
-    
-    
+
+#STEPS
+# Change the keyword from a variable to a list
+# Change the journal URL from a variable to a list
+#
+# Check if a CSV file already exists for the journal and keyword being mined
+# If a file doe not exist:
+#   - Create an empty CSV 
+#   - Fetch the PDF list
+#   - Add Status and Date to each record
+#   - Write the PDF list to the CSV
+# If a CSV file does exist
+#   - Read the CSV file into Python (let this be "old")
+#   - Create PDF list from the site (let this be "new")
+#   - Compare the two lists (each item in "old" against all items in "new")
+#   - For each record, add if new and set status (e.g. new, old, archived)
+#   - Update other variables as appropriate (e.g. date)
+#   - Overwrite CSV 
+# Downloading PDFS
+#   - For each status = "new", download the PDF
+#   - For each status = "archived" do nothing
+#   - For each status = "old" check if the PDF online is different from the one previously downloaded
+ 
+
+
+
+
+
+
+
 
 
 
