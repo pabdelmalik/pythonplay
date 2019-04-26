@@ -13,7 +13,10 @@ import urllib
 #Define your keyword of interest
 keyword = "influenza"
 
-#Define global variables
+#Define the string indicator for a PDF in the source code
+PDFstring = "/track/pdf"
+
+#Create empty global array to hold PDF references from all multiple pages
 PDFList = []
 
 #Retrieve the results page of a search on the keyword from BMC Public Health
@@ -41,32 +44,32 @@ numPages = int(res.text[startPages:endPages])
 #Create an array of PDF links
 
 
-def getPDFList(inputText):
-    notEndoflist = True
-    PDFList = []
-    sanityCheck = 0
-    PDFstring = "/track/pdf"
-    nextPosition = 0
-    while notEndoflist:
-        sanityCheck = sanityCheck + 1
-        linkStart = inputText.find(PDFstring, nextPosition)
-        if sanityCheck > 9999 or linkStart == -1:  
-            break   
-        linkEnd = inputText.find('"',linkStart)
-        PDFList.append (inputText[linkStart:linkEnd])
-        nextPosition = linkEnd
-        
-    return PDFList
+def getPDFList():
+    for i in range (1,numPages+1):
+        sanityCheck = 0
+        linkStart = 0
+        nextPosition = 0
+        PDFSource = BMCPH+"&page=%s"%(i)   #the %s is like a pointer which is replaced by i; done here because cannot concatenate integer to string  
+        print (PDFSource)
+        res = requests.get(PDFSource)
+        while linkStart != -1:
+            sanityCheck = sanityCheck + 1
+            linkStart = res.text.find(PDFstring, nextPosition)
+            if sanityCheck > 9999 or linkStart == -1:  
+                break   
+            linkEnd = res.text.find('"',linkStart)
+            PDFList.append (res.text[linkStart:linkEnd])
+            nextPosition = linkEnd
+            
+            
+        #PDFList.extend (getPDFList(res.text))
+        #print (PDFSource)
 
+    #return PDFList
 
-for i in range (1,numPages+1):
-    PDFSource = BMCPH+"&page=%s"%(i)   #the %s is like a pointer which is replaced by i; done here because cannot concatenate integer to string 
-    #print (PDFSource)
-    res = requests.get(PDFSource)
-    PDFList.extend (getPDFList(res.text))
-
-
+getPDFList()
 print (len(PDFList))
+
 
 #def getPDFs(PDFList):
 #    testfile = urllib.URLopener()
